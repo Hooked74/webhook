@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Logs of
+    <%= logContent.name %>
+  </title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
+  <style>
+    .success-log+.success-log {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="jumbotron" style="min-height: 100vh;">
+    <h1 class="display-4">Logs of
+      <%= logContent.name %>
+    </h1>
+    <p class="lead">Логи сборки
+      <%= logContent.name %>. Логи не обновляются в реальном времени. Делайте ребут страницы.</p>
+    <hr class="my-4">
+    <% logContent.success.forEach(function(log) { %>
+      <div class="success-log">
+        <h2>
+          <%= log.cmd %>
+        </h2>
+        <div class="card">
+          <div class="card-body">
+            <%= log.msg %>
+          </div>
+        </div>
+      </div>
+      <% }); %>
+        <hr class="my-4">
+        <% if (logContent.error) { %>
+          <div class="text-danger">
+            <p>Произошла ошибка!!!</p>
+            <h2>
+              <%= logContent.error.cmd %>
+            </h2>
+            <div class="card">
+              <div class="card-body">
+                <%= logContent.error.msg %>
+              </div>
+            </div>
+          </div>
+          <% } else { %>
+            <p class="text-success">Сборка прошла успешно!!!</p>
+            <% } %>
+  </div>
+</body>
+
+</html>
