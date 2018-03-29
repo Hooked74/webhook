@@ -37,22 +37,24 @@
         </div>
       </div>
       <% }); %>
-        <hr class="my-4">
-        <% if (logContent.error) { %>
-          <div class="text-danger">
-            <p>Произошла ошибка!!!</p>
-            <h2>
-              <%= logContent.error.cmd %>
-            </h2>
-            <div class="card">
-              <div class="card-body">
-                <%= logContent.error.msg %>
+        <% if (logContent.finished) { %>
+          <hr class="my-4">
+          <% if (logContent.error) { %>
+            <div class="text-danger">
+              <p>Произошла ошибка!!!</p>
+              <h2>
+                <%= logContent.error.cmd %>
+              </h2>
+              <div class="card">
+                <div class="card-body">
+                  <%= logContent.error.msg %>
+                </div>
               </div>
             </div>
-          </div>
-          <% } else { %>
-            <p class="text-success">Сборка прошла успешно!!!</p>
-            <% } %>
+            <% } else { %>
+              <p class="text-success">Сборка прошла успешно!!!</p>
+              <% } %>
+                <% } %>
   </div>
 </body>
 
