@@ -15,7 +15,7 @@ export class LogStructure {
     this.name =
       type +
       LogStructure.NAME_SEPARATOR +
-      this.date +
+      this.created +
       LogStructure.NAME_SEPARATOR +
       Math.round(Math.random() * 1e5);
   }
