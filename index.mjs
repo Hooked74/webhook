@@ -76,25 +76,29 @@ app.get(`/${API_TYPE}/:logName`, (req, res, next) => {
 });
 
 app.post("/", (req, res, next) => {
-  const { payload } = req.body;
-  let deployResult = null;
+  try {
+    const payload = JSON.parse(req.body.payload);
+    let deployResult = null;
 
-  if (
-    payload.repository.name === "ADA_Checklist_API" &&
-    /\/master$/.test(payload.ref)
-  ) {
-    const logCommanderAPI = new LogCommander(API_TYPE);
-    LogCommander.removeOldLogs(API_TYPE);
-    deployResult = deployAPI(logCommanderAPI);
+    if (
+      payload.repository.name === "ADA_Checklist_API" &&
+      /\/master$/.test(payload.ref)
+    ) {
+      const logCommanderAPI = new LogCommander(API_TYPE);
+      LogCommander.removeOldLogs(API_TYPE);
+      deployResult = deployAPI(logCommanderAPI);
+    }
+
+    // TODO: append new deploy
+
+    if (deployResult) {
+      deployResult.then(logCommander => logCommander.close());
+    }
+
+    res.send({ success: !!deployResult });
+  } catch (e) {
+    res.send({ msg: e.message, stack: e.stack });
   }
-
-  // TODO: append new deploy
-
-  if (deployResult) {
-    deployResult.then(logCommander => logCommander.close());
-  }
-
-  res.send({ success: !!deployResult });
 });
 
 app.use((err, req, res, next) => {
