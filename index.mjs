@@ -1,11 +1,9 @@
 /**
  * How append new deploy
  * =====================
- * 1. In file `index.js` add deployment type (const API_TYPE)
- * 2. In file `index.js` in `app.post("/")` add deployment condition
+ * 1. In file `index.js` add deployment type to `Types` object
+ * 2. In file `index.js` add a method with the name of the repository to `Repositories` object
  * 3. In file `deploy.js` add commands for deployment
- * 4. In file `index.js` add monitoring routes (app.get(`/${API_TYPE}`), app.get(`/${API_TYPE}:logName`))
- * 5. In file `index.js` append log type in app.get(`/`)
  */
 
 import fs from "fs";
@@ -23,10 +21,40 @@ import { LogCommander } from "./log";
 const port = 8000;
 const app = express();
 
-const API_TYPE = "api";
+const Types = {
+  API: "api",
+  NEXT: "next"
+};
 
 // set the view engine to ejs
 app.set("view engine", "ejs");
+
+const Repositories = {
+  ADA_Checklist_API(payload) {
+    if (/\/master$/.test(payload.ref)) {
+      const logCommanderAPI = new LogCommander(Types.API);
+      LogCommander.removeOldLogs(Types.API);
+      return deployAPI(logCommanderAPI);
+    }
+  },
+  ADA_Checklist_NEXT(payload) {
+    if (/\/master$/.test(payload.ref)) {
+      const logCommanderNEXT = new LogCommander(Types.NEXT);
+      LogCommander.removeOldLogs(Types.NEXT);
+      return deployNEXT(logCommanderNEXT);
+    }
+  }
+};
+
+const executeDeploy = payload => {
+  const repName = payload.repository.name;
+
+  if (Repositories[repName]) {
+    return Repositories[repName](payload);
+  }
+};
+
+const existType = type => Object.values(Types).includes(type);
 
 /**
  * Express configuration.
@@ -49,27 +77,41 @@ app
 
 // mount all routes on / path
 app.get(`/`, (req, res, next) => {
-  res.render("pages/index", { logTypes: [API_TYPE] });
+  res.render("pages/index", { logTypes: Object.values(Types) });
 });
 
-app.get(`/${API_TYPE}`, (req, res, next) => {
-  LogCommander.removeOldLogs(API_TYPE);
+app.get("/:type", (req, res, next) => {
+  const { type } = req.params;
 
-  const fileNames = LogCommander.getFileNames(API_TYPE);
+  if (!existType(type)) {
+    res.status(httpStatus.NOT_FOUND);
+    return next(new Error("Unknow Type"));
+  }
+
+  LogCommander.removeOldLogs(type);
+
+  const fileNames = LogCommander.getFileNames(type);
   const logContents = fileNames
     .map(fileName => LogCommander.getLogContent(fileName))
     .filter(logContent => !!logContent);
 
-  res.render("pages/list", { logContents, type: API_TYPE });
+  res.render("pages/list", { logContents, type });
 });
 
-app.get(`/${API_TYPE}/:logName`, (req, res, next) => {
-  LogCommander.removeOldLogs(API_TYPE);
+app.get("/:type/:logName", (req, res, next) => {
+  const { type, logName } = req.params;
 
-  const logContent = LogCommander.getLogContent(req.params.logName);
+  if (!existType(type)) {
+    res.status(httpStatus.NOT_FOUND);
+    return next(new Error("Unknow Type"));
+  }
+
+  LogCommander.removeOldLogs(type);
+
+  const logContent = LogCommander.getLogContent(logName);
 
   if (logContent) {
-    res.render("pages/log", { logContent, type: API_TYPE });
+    res.render("pages/log", { logContent, type });
   } else {
     res.status(httpStatus.NOT_FOUND).send("Logs not found");
   }
@@ -77,19 +119,7 @@ app.get(`/${API_TYPE}/:logName`, (req, res, next) => {
 
 app.post("/", (req, res, next) => {
   try {
-    const payload = JSON.parse(req.body.payload);
-    let deployResult = null;
-
-    if (
-      payload.repository.name === "ADA_Checklist_API" &&
-      /\/master$/.test(payload.ref)
-    ) {
-      const logCommanderAPI = new LogCommander(API_TYPE);
-      LogCommander.removeOldLogs(API_TYPE);
-      deployResult = deployAPI(logCommanderAPI);
-    }
-
-    // TODO: append new deploy
+    const deployResult = executeDeploy(JSON.parse(req.body.payload));
 
     if (deployResult) {
       deployResult.then(logCommander => logCommander.close());
