@@ -15,7 +15,7 @@ import bodyParser from "body-parser";
 import helmet from "helmet";
 import cors from "cors";
 
-import { deployAPI } from "./deploy";
+import { deployAPI, deployNEXT } from "./deploy";
 import { LogCommander } from "./log";
 
 const port = 8000;
